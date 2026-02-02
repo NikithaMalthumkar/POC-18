@@ -1,123 +1,93 @@
 name: POC18 CI Workflow
+
 on:
-    push:
-        branches:
-            - dev
-            - test
-            - main
+  push:
+    branches:
+      - dev
+      - test
+      - main
 
 jobs:
-   deploy-dev:
-        name: Deploy to dev
-        runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/dev'
-        environment: dev
 
-        steps:
-          - name: Deploy to dev EC2 via SSH
-            uses: appleboy/ssh-action@v1.0.3
-            with:
-                host: ${{ secrets.EC2_HOST }}
-                username: ${{ secrets.EC2_USER }}
-                key: ${{ secrets.EC2_KEY }}
-                port: 22
-                script: |
-                    echo "Connected to EC2"
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
+    environment: dev
 
-                    echo "cd to poc18 app directory"
-                    cd /home/${{ secrets.EC2_USER }}/POC-18
-                    cd poc18-aws
+    steps:
+      - name: Deploy to Dev EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEV_EC2_HOST }}
+          username: ${{ secrets.DEV_EC2_USER }}
+          key: ${{ secrets.DEV_EC2_KEY }}
+          port: 22
+          script: |
+            echo "Connected to DEV EC2"
 
-                    echo "Checkout to dev branch"
-                    git checkout dev
+            cd /home/$USER/POC-18/poc18-aws
 
-                    echo "Pull latest code from remote dev"
-                    git pull origin dev
+            git checkout dev
+            git pull origin dev
 
-                    echo "Copying contents of index html to httpd"
-                    sudo cp index.html /usr/share/httpd/noindex/index.html
+            sudo cp index.html /usr/share/httpd/noindex/index.html
+            sudo systemctl restart httpd
 
-                    echo "Restarting httpd"
-                    sudo systemctl restart httpd
+            echo "DEV Deployment Successful!"
 
-                    # echo "Adding PORT and NODE_ENV to env"
-                    # export PORT=8080
-                    # export NODE_ENV=dev
 
-                    echo "Deployment to dev server successful!!"
-   deploy-test:
-        name: Deploy to test
-        runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/test'
-        environment: test
+  deploy-test:
+    name: Deploy to Test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/test'
+    environment: test
 
-        steps:
-          - name: Deploy to test EC2 via SSH
-            uses: appleboy/ssh-action@v1.0.3
-            with:
-                host: ${{ secrets.EC2_HOST }}
-                username: ${{ secrets.EC2_USER }}
-                key: ${{ secrets.EC2_KEY }}
-                port: 22
-                script: |
-                    echo "Connected to EC2"
+    steps:
+      - name: Deploy to Test EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.TEST_EC2_HOST }}
+          username: ${{ secrets.TEST_EC2_USER }}
+          key: ${{ secrets.TEST_EC2_KEY }}
+          port: 22
+          script: |
+            echo "Connected to TEST EC2"
 
-                    echo "cd to poc18 app directory"
-                    cd /home/${{ secrets.EC2_USER }}/POC-18
-                    cd poc18-aws
+            cd /home/$USER/POC-18/poc18-aws
 
-                    echo "Checkout to test branch"
-                    git checkout test
+            git checkout test
+            git pull origin test
 
-                    echo "Pull latest code from remote test"
-                    git pull origin test
+            sudo cp index.html /usr/share/httpd/noindex/index.html
+            sudo systemctl restart httpd
 
-                    echo "Copying contents of index html to httpd"
-                    sudo cp index.html /usr/share/httpd/noindex/index.html
+            echo "TEST Deployment Successful!"
 
-                    echo "Restarting httpd"
-                    sudo systemctl restart httpd
 
-                    # echo "Adding PORT and NODE_ENV to env"
-                    # export PORT=8080
-                    # export NODE_ENV=dev
+  deploy-prod:
+    name: Deploy to Prod
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: prod
 
-                    echo "Deployment to test server successful!!"
-   deploy-prod:
-        name: Deploy to prod
-        runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/main'
-        environment: prod
+    steps:
+      - name: Deploy to Prod EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_EC2_HOST }}
+          username: ${{ secrets.PROD_EC2_USER }}
+          key: ${{ secrets.PROD_EC2_KEY }}
+          port: 22
+          script: |
+            echo "Connected to PROD EC2"
 
-        steps:
-          - name: Deploy to prod EC2 via SSH
-            uses: appleboy/ssh-action@v1.0.3
-            with:
-                host: ${{ secrets.EC2_HOST }}
-                username: ${{ secrets.EC2_USER }}
-                key: ${{ secrets.EC2_KEY }}
-                port: 22
-                script: |
-                    echo "Connected to EC2"
+            cd /home/$USER/POC-18/poc18-aws
 
-                    echo "cd to poc18 app directory"
-                    cd /home/${{ secrets.EC2_USER }}/POC-18
-                    cd poc18-aws
+            git checkout main
+            git pull origin main
 
-                    echo "Checkout to main branch"
-                    git checkout main
+            sudo cp index.html /usr/share/httpd/noindex/index.html
+            sudo systemctl restart httpd
 
-                    echo "Pull latest code from remote dev"
-                    git pull origin main
-
-                    echo "Copying contents of index html to httpd"
-                    sudo cp index.html /usr/share/httpd/noindex/index.html
-
-                    echo "Restarting httpd"
-                    sudo systemctl restart httpd
-
-                    # echo "Adding PORT and NODE_ENV to env"
-                    # export PORT=8080
-                    # export NODE_ENV=dev
-
-                    echo "Deployment to prod server successful!!"
+            echo "PROD Deployment Successful!"
